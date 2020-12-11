@@ -1,6 +1,9 @@
 #IDE
 /.idea
 
+#Laravel Passport
+/.md
+
 /node_modules
 /public/hot
 /public/storage
