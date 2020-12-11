@@ -2,25 +2,27 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Models\Recipe;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class RecipeController extends Controller
+class RecipeController extends BaseController
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse
      */
     public function index()
     {
-        //
+        $recipes = Recipe::all();
+        return $this->sendResponse($recipes,'Recipes retrieved successfully');
     }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param Request $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
@@ -42,7 +44,7 @@ class RecipeController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param Request $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
