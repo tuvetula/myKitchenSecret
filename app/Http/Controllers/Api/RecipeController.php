@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\RecipeResource;
 use App\Models\Recipe;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class RecipeController extends BaseController
 {
@@ -23,7 +26,7 @@ class RecipeController extends BaseController
      * Store a newly created resource in storage.
      *
      * @param Request $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function store(Request $request)
     {
@@ -33,12 +36,17 @@ class RecipeController extends BaseController
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show(int $id)
     {
-        //
+        try {
+            $recipe = new RecipeResource(Recipe::findOrFail($id));
+            return $this->sendResponse($recipe,'RecipeResource retrieved successfully');
+        }catch (ModelNotFoundException $exception)
+        {
+            return $this->sendError('The resource does not exist.',[],Response::HTTP_NOT_FOUND);
+        }
     }
 
     /**
@@ -46,7 +54,7 @@ class RecipeController extends BaseController
      *
      * @param Request $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function update(Request $request, $id)
     {
@@ -57,7 +65,7 @@ class RecipeController extends BaseController
      * Remove the specified resource from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function destroy($id)
     {
