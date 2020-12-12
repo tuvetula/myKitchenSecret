@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,7 +35,12 @@ class AuthController extends BaseController
         $input = $request->all();
         $input['password'] = bcrypt($input['password']);
         $input['is_admin'] = false;
-        $user = User::create($input);
+        try {
+            $user = User::create($input);
+        }catch(QueryException $exception)
+        {
+            return $this->sendError('User with this email address already exist',[],409);
+        }
         $success['token'] =  $user->createToken(config('app.name'))->accessToken;
         $success['name'] =  $user->name;
 
@@ -49,15 +55,19 @@ class AuthController extends BaseController
      */
     public function login(Request $request)
     {
-        if(Auth::attempt(['email' => $request->email, 'password' => $request->password])){
-            $user = Auth::user();
-            $success['token'] =  $user->createToken(config('app.name'))-> accessToken;
-            $success['name'] =  $user->name;
+        $login = $request->validate([
+            'email' => 'required',
+            'password' => 'required'
+        ]);
 
-            return $this->sendResponse($success, 'User login successfully.');
-        }
-        else{
+        if(!Auth::attempt($login)){
             return $this->sendError('Unauthorised.', ['error'=>'Unauthorised']);
         }
+
+        $user = Auth::user();
+        $success['token'] =  $user->createToken(config('app.name'))-> accessToken;
+        $success['name'] =  $user->name;
+
+        return $this->sendResponse($success, 'User login successfully.');
     }
 }
