@@ -84,11 +84,22 @@ class UserController extends BaseController
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return Response
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show($id): JsonResponse
     {
-        //
+        try{
+            $user = new UserResource(User::findOrFail($id));
+            return $this->sendResponse($user,'User retrieved successfully');
+        }
+        catch(ModelNotFoundException $exception)
+        {
+            Log::channel(User::LOG_CHANNEL)->warning('[ModelNotFoundException] - ',[
+                'user_id' => Auth::id(),
+                'user_search_id' => $id
+            ]);
+            return $this->sendError('The resource does not exist',[],Response::HTTP_NOT_FOUND);
+        }
     }
 
     /**
