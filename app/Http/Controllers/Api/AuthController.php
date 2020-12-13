@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
+use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends BaseController
 {
@@ -20,33 +21,42 @@ class AuthController extends BaseController
      * @param Request $request
      * @return JsonResponse
      */
-    public function register(Request $request)
+    public function register(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'first_name' => 'required',
-            'email' => 'required|email',
-            'password' => 'required',
-            'confirm_password' => 'required|same:password',
-        ]);
-
-        if($validator->fails()){
-            return $this->sendError('Validation Error.', $validator->errors());
-        }
-
-        $input = $request->all();
-        $input['password'] = bcrypt($input['password']);
-        $input['is_admin'] = false;
         try {
-            $user = User::create($input);
-        }catch(QueryException $exception)
-        {
-            return $this->sendError('User with this email address already exist',[],Response::HTTP_CONFLICT);
+            $validatedData = $request->validate([
+                'name' => 'required|string',
+                'first_name' => 'required|string',
+                'email' => 'required|email',
+                'password' => 'required|string|min:8',
+                'confirm_password' => 'required|string|min:8|same:password',
+            ]);
+            $validatedData['password'] = bcrypt($validatedData['password']);
+            $validatedData['is_admin'] = false;
+            $user = new UserResource(User::create($validatedData));
+
+            Log::channel(config('logging.channels.authentication.name'))->info('New user has been registered',[
+                'id'=>$user->id,
+                'name'=>$user->name,
+                'first_name'=>$user->first_name
+            ]);
+            return $this->sendResponse($user, 'User register successfully. You have to login to access resources');
         }
-        $success['token'] =  $user->createToken(config('app.name'))->accessToken;
-        $success['name'] =  $user->name;
-        Log::channel('authentication')->info('New user has been registered',['id'=>$user->id,'name'=>$user-name,'first_name'=>$user->first_name]);
-        return $this->sendResponse($success, 'User register successfully.');
+        catch(ValidationException $exception)
+        {
+            Log::channel(config('logging.channels.authentication.name'))->info($exception->getMessage(),[
+                'request' => $request->all(),
+                'errors' => $exception->errors()
+            ]);
+            return $this->sendError($exception->getMessage(),$exception->errors(),Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        catch(QueryException $exception)
+        {
+            Log::channel(config('logging.channels.authentication.name'))->info($exception->getMessage(),[
+                'request' => $request->all()
+            ]);
+            return $this->sendError('User with this email address already exist',$request->all(),Response::HTTP_CONFLICT);
+        }
     }
 
     /**
@@ -55,33 +65,47 @@ class AuthController extends BaseController
      * @param Request $request
      * @return JsonResponse
      */
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
-        $login = $request->validate([
-            'email' => 'required',
-            'password' => 'required'
-        ]);
+        try{
 
-        if(!Auth::attempt($login)){
-            return $this->sendError('Unauthorised.', ['error'=>'Unauthorised']);
+            $login = $request->validate([
+                'email' => 'required|string|email',
+                'password' => 'required|string'
+            ]);
+
+            if(!Auth::attempt($login)){
+                return $this->sendError('Unauthorised.', ['error'=>'Unauthorised'],Response::HTTP_FORBIDDEN);
+            }
+
+            $user = Auth::user();
+            $response['token'] =  $user->createToken(config('app.name'))->accessToken;
+
+            return $this->sendResponse($response, 'User login successfully.');
         }
-
-        $user = Auth::user();
-        $success['token'] =  $user->createToken(config('app.name'))-> accessToken;
-        $success['name'] =  $user->name;
-
-        return $this->sendResponse($success, 'User login successfully.');
+        catch(ValidationException $exception)
+        {
+            Log::channel(config('logging.channels.authentication.name'))->info($exception->getMessage(),[
+                'request' => $request->all(),
+                'errors' => $exception->errors()
+            ]);
+            return $this->sendError($exception->getMessage(),$exception->errors(),Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
     }
 
-    public function logout()
+    /**
+     * Logout Api
+     * @return JsonResponse
+     */
+    public function logout(): JsonResponse
     {
         try{
             $user = Auth::user();
             $user->token()->revoke();
             return $this->sendResponse([], 'User logout successfully');
-        } catch (\Exception $exception)
+        } catch (Exception $exception)
         {
-            Log::channel('authentication')->error($exception->getMessage(),['user_id' => Auth::id()]);
+            Log::channel(config('logging.channels.authentication.name'))->error($exception->getMessage(),['user_id' => Auth::id()]);
             return $this->sendError('Error with logout. Retry later');
         }
 

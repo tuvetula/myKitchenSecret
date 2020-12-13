@@ -40,33 +40,23 @@ return [
             'channels' => ['daily'],
             'ignore_exceptions' => false,
         ],
-
-        'single' => [
-            'driver' => 'single',
-            'path' => storage_path('logs/laravel.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-        ],
         'authentication' => [
+            'name' => 'authentication',
             'driver' => 'daily',
             'path' => storage_path('logs/Authentication/auth.log'),
             'level' => env('LOG_LEVEL', 'debug'),
         ],
         'user' => [
+            'name' => 'user',
             'driver' => 'daily',
             'path' => storage_path('logs/User/user.log'),
             'level' => env('LOG_LEVEL', 'debug'),
         ],
-        'daily' => [
-            'driver' => 'daily',
-            'path' => storage_path('logs/laravel.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-            'days' => 14,
-        ],
         'recipe' => [
+            'name' => 'recipe',
             'driver' => 'daily',
             'path' => storage_path('logs/Recipe/recipe.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => 14,
         ],
 
         'slack' => [
@@ -114,6 +104,21 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
+        'daily' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/laravel.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+        ],
+        'single' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/laravel.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+        ],
     ],
+
+    'list_channels_name' => [
+        'auth' => 'authentication'
+    ]
 
 ];
