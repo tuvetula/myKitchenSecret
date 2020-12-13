@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Business\PictureBusiness;
-use App\Http\Business\RecipeBusiness;
 use App\Http\Resources\RecipeResource;
 use App\Models\Recipe;
 use Exception;
@@ -22,7 +21,7 @@ class RecipeController extends BaseController
      *
      * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $recipes = Recipe::all();
         return $this->sendResponse($recipes,'Recipes retrieved successfully');
@@ -32,10 +31,9 @@ class RecipeController extends BaseController
      * Store a newly created resource in storage.
      *
      * @param Request $request
-     * @param RecipeBusiness $recipeBusiness
      * @return JsonResponse
      */
-    public function store(Request $request,RecipeBusiness $recipeBusiness): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         try {
             $validatedData = $request->validate(Recipe::VALIDATION_RULES);
@@ -86,10 +84,9 @@ class RecipeController extends BaseController
      *
      * @param Request $request
      * @param int $id
-     * @param RecipeBusiness $recipeBusiness
      * @return JsonResponse
      */
-    public function update(Request $request, $id, RecipeBusiness $recipeBusiness): JsonResponse
+    public function update(Request $request, int $id): JsonResponse
     {
         try {
             $validatedData = $request->validate(Recipe::VALIDATION_RULES);
@@ -115,8 +112,8 @@ class RecipeController extends BaseController
         catch (ModelNotFoundException $exception)
         {
             Log::channel('recipe')->error($exception->getMessage(),['recipe_id'=>$id]);
-            return $this->sendError('The resource does not exist.',[],Response::HTTP_NOT_FOUND);
-        } catch (\Exception $exception)
+            return $this->sendError('The resource does not exist.',[]);
+        } catch (Exception $exception)
         {
             Log::channel('recipe')->error($exception->getMessage(),['recipe_id'=>$id]);
             return $this->sendError('Update failed',[],Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -142,7 +139,7 @@ class RecipeController extends BaseController
         }catch(ModelNotFoundException $exception)
         {
             Log::channel('recipe')->error($request->method().' - '.$exception->getMessage(),['user_id' => Auth::id(),'recipe_id'=>$id]);
-            return $this->sendError('The resource does not exist.',[],Response::HTTP_NOT_FOUND);
+            return $this->sendError('The resource does not exist.',[]);
         }
     }
 }
