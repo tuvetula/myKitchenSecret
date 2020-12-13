@@ -34,7 +34,7 @@ Route::prefix('v1')->group(function(){
         Route::prefix('users')->group(function(){
             Route::middleware('admin')->group(function(){
                 Route::get('/',[UserController::class,'index']);
-
+                Route::post('/',[UserController::class,'store']);
             });
         });
         Route::get('logout',[AuthController::class, 'logout'])->name('logout');
