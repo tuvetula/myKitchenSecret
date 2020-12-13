@@ -9,8 +9,7 @@ class Recipe extends Model
 {
     use HasFactory;
 
-    const PICTURE_PATH = 'pictures/recipes';
-    const PICTURE_DELETE_PATH = 'old/pictures/path';
+    const PICTURE_FOLDER = 'recipes';
     const VALIDATION_RULES = [
         'title' => 'required|string',
         'content' => 'required|string',
