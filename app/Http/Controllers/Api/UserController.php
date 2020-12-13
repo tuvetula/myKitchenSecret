@@ -83,10 +83,10 @@ class UserController extends BaseController
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return JsonResponse
      */
-    public function show($id): JsonResponse
+    public function show(int $id): JsonResponse
     {
         try{
             $user = new UserResource(User::findOrFail($id));
@@ -117,11 +117,24 @@ class UserController extends BaseController
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
-     * @return Response
+     * @param int $id
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy(int $id): JsonResponse
     {
-        //
+        try{
+            $user = User::findOrFail($id);
+            $user->delete();
+
+            return $this->sendResponse([],'User deleted successfully',Response::HTTP_NO_CONTENT);
+        }
+        catch(ModelNotFoundException $exception)
+        {
+            Log::channel(User::LOG_CHANNEL)->warning('[ModelNotFoundException] - ',[
+                'user_id' => Auth::id(),
+                'user_search_id' => $id
+            ]);
+            return $this->sendError('The resource does not exist',[],Response::HTTP_NOT_FOUND);
+        }
     }
 }
