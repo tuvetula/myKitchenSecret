@@ -40,12 +40,17 @@ class RecipeController extends BaseController
         try {
             $validatedData = $request->validate(Recipe::VALIDATION_RULES);
             $validatedData['user_id'] = Auth::id();
+            if($request->hasFile('picture') && $request->file('picture')->isValid()) {
+                $validatedData['picture'] = PictureBusiness::storeImage($request->picture,Recipe::PICTURE_FOLDER);
+            }
             $recipe = Recipe::create($validatedData);
+
             Log::channel('recipe')->info('New recipe has been created',[
                 'id' => $recipe->id,
                 'user_id' => Auth::id()
             ]);
-            return $this->sendResponse($recipe,'The recipe has been successfully created',Response::HTTP_CREATED);
+
+            return $this->sendResponse(new RecipeResource($recipe),'The recipe has been successfully created',Response::HTTP_CREATED);
         }catch (ValidationException $exception){
             Log::channel('recipe')->error($exception->getMessage());
             return $this->sendError($exception->getMessage(),$exception->errors(),Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -90,16 +95,17 @@ class RecipeController extends BaseController
             $validatedData = $request->validate(Recipe::VALIDATION_RULES);
             $recipe = Recipe::findOrFail($id);
 
-            // Check if there's a picture
-            if($request->hasFile('picture') && $request->file('picture')->isValid()){
-                $validatedData['picture'] = $request->picture->store(Recipe::PICTURE_PATH,'public');
-                PictureBusiness::moveOldPictureFile($recipe->picture);
+            if($request->hasFile('picture') && $request->file('picture')->isValid()) {
+                $validatedData['picture'] = PictureBusiness::storeImage($request->picture);
+            }
+            if($validatedData['picture'] && $recipe->picture){
+                PictureBusiness::movePictureFromPublicFolder($recipe->picture);
             }
             $recipe->update($validatedData);
             return $this->sendResponse(new RecipeResource($recipe),'Recipe updated successfully');
         }catch(ValidationException $exception)
         {
-            Log::channel('recipe')->warning('['.get_class($exception).'] - '.$exception->getMessage(),[
+            Log::channel('recipe')->warning($request->method().' ['.get_class($exception).'] - '.$exception->getMessage(),[
                 'user_id' => Auth::id(),
                 'recipe_id' => $id,
                 'request' => $request->all()
@@ -120,18 +126,22 @@ class RecipeController extends BaseController
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
+     * @param Request $request
      * @return JsonResponse
      */
-    public function destroy($id): JsonResponse
+    public function destroy(int $id,Request $request): JsonResponse
     {
         try{
             $recipe = Recipe::findOrFail($id);
+            if($recipe->picture){
+                PictureBusiness::deletePicture($recipe->picture);
+            }
             $recipe->delete();
             return $this->sendResponse([],'The resource has been deleted successfully',Response::HTTP_NO_CONTENT);
         }catch(ModelNotFoundException $exception)
         {
-            Log::channel('recipe')->error($exception->getMessage(),['recipe_id'=>$id]);
+            Log::channel('recipe')->error($request->method().' - '.$exception->getMessage(),['user_id' => Auth::id(),'recipe_id'=>$id]);
             return $this->sendError('The resource does not exist.',[],Response::HTTP_NOT_FOUND);
         }
     }
