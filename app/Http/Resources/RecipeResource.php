@@ -5,7 +5,6 @@ namespace App\Http\Resources;
 use App\Http\Business\PictureBusiness;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class RecipeResource extends JsonResource
 {
@@ -15,7 +14,7 @@ class RecipeResource extends JsonResource
      * @param Request $request
      * @return array
      */
-    public function toArray(Request $request): array
+    public function toArray($request): array
     {
         return [
             'id' => $this->id,

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RecipeController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,10 +22,21 @@ Route::prefix('v1')->group(function(){
     Route::post('login', [AuthController::class, 'login'])->name('login');
 
     Route::middleware('auth:api')->group(function(){
-        Route::get('/recipes',[RecipeController::class,'index'])->middleware('admin');
-        Route::post('/recipes', [RecipeController::class,'store']);
-        Route::put('/recipes/{id}',[RecipeController::class,'update']);
-        Route::delete('recipes/{id}', [RecipeController::class,'destroy']);
+        Route::prefix('recipes')->group(function(){
+            Route::middleware('admin')->group(function(){
+                Route::get('/',[RecipeController::class,'index']);
+                Route::post('/', [RecipeController::class,'store']);
+                Route::get('/{id}',[RecipeController::class,'show']);
+                Route::put('/{id}',[RecipeController::class,'update']);
+                Route::delete('/{id}', [RecipeController::class,'destroy']);
+            });
+        });
+        Route::prefix('users')->group(function(){
+            Route::middleware('admin')->group(function(){
+                Route::get('/',[UserController::class,'index']);
+
+            });
+        });
         Route::get('logout',[AuthController::class, 'logout'])->name('logout');
     });
 });
