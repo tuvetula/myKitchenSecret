@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
@@ -49,8 +50,8 @@ class UserController extends BaseController
                 'name' => 'required|string|min:2',
                 'first_name' => 'required|string|min:2',
                 'email' => 'required|unique:App\Models\User,email|email',
-                'password' => 'required',
-                'confirm_password' => 'required|same:password'
+                'password' => 'required|string|min:8',
+                'confirm_password' => 'required|string|min:8|same:password'
             ]);
             $validatedData['password'] = bcrypt($validatedData['password']);
             $validatedData['is_admin'] = false;
@@ -106,12 +107,52 @@ class UserController extends BaseController
      * Update the specified resource in storage.
      *
      * @param Request $request
-     * @param  int  $id
-     * @return Response
+     * @param int $id
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id): JsonResponse
     {
-        //
+        try{
+            $validatedData = $request->validate([
+                'name' => 'string|min:2',
+                'first_name' => 'string|min:2',
+                'email' => 'unique:App\Models\User,email|email',
+                'password' => 'string|min:8',
+                'confirm_password' => 'string|min:8|same:password'
+            ]);
+            $user = User::findOrFail($id);
+
+            // If email change, put email_verified to false
+            if(isset($validatedData['email']) && $validatedData['email'] != $user->email)
+            {
+                $user->email_verified = false;
+            }
+
+            // If password change, bcrypt new password
+            if(isset($validatedData['confirm_password']) && !Hash::check($validatedData['confirm_password'],$user->password)){
+                $user->password = bcrypt($validatedData['password']);
+            }
+
+            $user->update($validatedData);
+            return $this->sendResponse(new UserResource($user),'User has been updated succesfully.');
+        }
+        catch(ValidationException $exception)
+        {
+            Log::channel(User::LOG_CHANNEL)->warning($request->method().' '.$exception->getMessage(),[
+                'user_id' => Auth::id(),
+                'request' => $request->all(),
+                'errors' => $exception->errors()
+            ]);
+            return $this->sendError($exception->getMessage(),$exception->errors(),Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        catch(ModelNotFoundException $exception)
+        {
+            Log::channel(User::LOG_CHANNEL)->warning('[ModelNotFoundException] - ',[
+                'user_id' => Auth::id(),
+                'user_search_id' => $id
+            ]);
+            return $this->sendError('The resource does not exist',[],Response::HTTP_NOT_FOUND);
+        }
     }
 
     /**
