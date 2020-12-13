@@ -22,5 +22,6 @@ Route::prefix('v1')->group(function(){
 
     Route::middleware('auth:api')->group(function(){
         Route::get('/recipes',[RecipeController::class,'index'])->middleware('admin');
+        Route::get('logout',[AuthController::class, 'logout'])->name('logout');
     });
 });
