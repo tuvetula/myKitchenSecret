@@ -14,16 +14,17 @@ class BaseController extends Controller
      *
      * @param $result
      * @param $message
+     * @param int $code
      * @return JsonResponse
      */
-    public function sendResponse($result, $message): JsonResponse
+    public function sendResponse($result, $message, $code = Response::HTTP_OK): JsonResponse
     {
         $response = [
             'success' => true,
             'data'    => $result,
             'message' => $message,
         ];
-        return response()->json($response, Response::HTTP_OK);
+        return response()->json($response, $code);
     }
 
     /**
