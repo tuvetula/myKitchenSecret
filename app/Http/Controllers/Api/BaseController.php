@@ -12,6 +12,7 @@ class BaseController extends Controller
     /**
      * success response method.
      *
+
      * @param array $data
      * @param string $message
      * @return JsonResponse
@@ -23,7 +24,7 @@ class BaseController extends Controller
             'data'    => $data,
             'message' => $message,
         ];
-        return response()->json($response, Response::HTTP_OK);
+        return response()->json($response, $code);
     }
 
     /**

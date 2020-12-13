@@ -57,6 +57,12 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => 14,
         ],
+        'recipe' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/Recipe/recipe.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+        ],
 
         'slack' => [
             'driver' => 'slack',

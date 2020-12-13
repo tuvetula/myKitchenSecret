@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class share_status extends Model
+class Share_status extends Model
 {
     use HasFactory;
 }

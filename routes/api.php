@@ -22,6 +22,9 @@ Route::prefix('v1')->group(function(){
 
     Route::middleware('auth:api')->group(function(){
         Route::get('/recipes',[RecipeController::class,'index'])->middleware('admin');
+        Route::post('/recipes', [RecipeController::class,'store']);
+        Route::put('/recipes/{id}',[RecipeController::class,'update']);
+        Route::delete('recipes/{id}', [RecipeController::class,'destroy']);
         Route::get('logout',[AuthController::class, 'logout'])->name('logout');
     });
 });
