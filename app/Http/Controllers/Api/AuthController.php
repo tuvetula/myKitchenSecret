@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -40,7 +41,7 @@ class AuthController extends BaseController
             $user = User::create($input);
         }catch(QueryException $exception)
         {
-            return $this->sendError('User with this email address already exist',[],409);
+            return $this->sendError('User with this email address already exist',[],Response::HTTP_CONFLICT);
         }
         $success['token'] =  $user->createToken(config('app.name'))->accessToken;
         $success['name'] =  $user->name;
