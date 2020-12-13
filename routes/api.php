@@ -25,6 +25,6 @@ Route::prefix('v1')->group(function(){
         Route::post('/recipes', [RecipeController::class,'store']);
         Route::put('/recipes/{id}',[RecipeController::class,'update']);
         Route::delete('recipes/{id}', [RecipeController::class,'destroy']);
-        Route::get('recipes/{id}',[RecipeController::class,'show']);
+        Route::get('logout',[AuthController::class, 'logout'])->name('logout');
     });
 });
