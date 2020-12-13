@@ -73,11 +73,11 @@ class RecipeController extends BaseController
     {
         try {
             $recipe = new RecipeResource(Recipe::findOrFail($id));
-            return $this->sendResponse($recipe,'RecipeResource retrieved successfully');
+            return $this->sendResponse($recipe,'Recipe retrieved successfully');
         }catch (ModelNotFoundException $exception)
         {
             Log::channel('recipe')->error($exception->getMessage(),['recipe_id'=>$id]);
-            return $this->sendError('The resource does not exist.',[],Response::HTTP_NOT_FOUND);
+            return $this->sendError('The resource does not exist.',[]);
         }
     }
 
