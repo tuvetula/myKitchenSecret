@@ -12,12 +12,12 @@ class BaseController extends Controller
     /**
      * success response method.
      *
-
      * @param array $data
      * @param string $message
+     * @param int $code
      * @return JsonResponse
      */
-    public function sendResponse(array $data, string $message): JsonResponse
+    public function sendResponse(array $data, string $message, $code = Response::HTTP_OK): JsonResponse
     {
         $response = [
             'success' => true,
@@ -35,7 +35,7 @@ class BaseController extends Controller
      * @param int $code
      * @return JsonResponse
      */
-    public function sendError(string $message, $errorMessages = [], $code = 404): JsonResponse
+    public function sendError(string $message, $errorMessages = [], $code = Response::HTTP_NOT_FOUND): JsonResponse
     {
         $response = [
             'success' => false,
