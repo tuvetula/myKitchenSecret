@@ -6,13 +6,14 @@ use App\Http\Business\PictureBusiness;
 use App\Http\Business\RecipeBusiness;
 use App\Http\Resources\RecipeResource;
 use App\Models\Recipe;
-use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class RecipeController extends BaseController
 {
@@ -31,11 +32,30 @@ class RecipeController extends BaseController
      * Store a newly created resource in storage.
      *
      * @param Request $request
-     * @return Response
+     * @param RecipeBusiness $recipeBusiness
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request,RecipeBusiness $recipeBusiness): JsonResponse
     {
-        //
+        try {
+            $validatedData = $request->validate(Recipe::VALIDATION_RULES);
+            $validatedData['user_id'] = Auth::id();
+            $recipe = Recipe::create($validatedData);
+            Log::channel('recipe')->info('New recipe has been created',[
+                'id' => $recipe->id,
+                'user_id' => Auth::id()
+            ]);
+            return $this->sendResponse($recipe,'The recipe has been successfully created',Response::HTTP_CREATED);
+        }catch (ValidationException $exception){
+            Log::channel('recipe')->error($exception->getMessage());
+            return $this->sendError($exception->getMessage(),$exception->errors(),Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        catch(Exception $exception)
+        {
+            Log::channel('recipe')->error($exception->getMessage());
+            return $this->sendError('Error during creating resource.',[],Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
     }
 
     /**
@@ -66,9 +86,8 @@ class RecipeController extends BaseController
      */
     public function update(Request $request, $id, RecipeBusiness $recipeBusiness): JsonResponse
     {
-        $validatedData = $recipeBusiness->validateInputData($request);
-
         try {
+            $validatedData = $request->validate(Recipe::VALIDATION_RULES);
             $recipe = Recipe::findOrFail($id);
 
             // Check if there's a picture
@@ -78,7 +97,16 @@ class RecipeController extends BaseController
             }
             $recipe->update($validatedData);
             return $this->sendResponse(new RecipeResource($recipe),'Recipe updated successfully');
-        }catch (ModelNotFoundException $exception)
+        }catch(ValidationException $exception)
+        {
+            Log::channel('recipe')->warning('['.get_class($exception).'] - '.$exception->getMessage(),[
+                'user_id' => Auth::id(),
+                'recipe_id' => $id,
+                'request' => $request->all()
+            ]);
+            return $this->sendError('The given data was invalid.',$exception->errors(),Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        catch (ModelNotFoundException $exception)
         {
             Log::channel('recipe')->error($exception->getMessage(),['recipe_id'=>$id]);
             return $this->sendError('The resource does not exist.',[],Response::HTTP_NOT_FOUND);

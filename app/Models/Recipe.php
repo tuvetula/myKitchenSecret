@@ -11,6 +11,15 @@ class Recipe extends Model
 
     const PICTURE_PATH = 'pictures/recipes';
     const PICTURE_DELETE_PATH = 'old/pictures/path';
+    const VALIDATION_RULES = [
+        'title' => 'required|string',
+        'content' => 'required|string',
+        'preparation_time' => 'integer',
+        'baking_time' => 'integer',
+        'author_comment' => 'string',
+        'picture' => 'mimes:jpeg,png|max:2048',
+        'share_status_id' => 'required|integer'
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -24,5 +33,7 @@ class Recipe extends Model
         'baking_time',
         'author_comment',
         'picture',
+        'share_status_id',
+        'user_id'
     ];
 }
