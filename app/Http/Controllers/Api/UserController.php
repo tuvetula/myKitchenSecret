@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -20,6 +19,7 @@ class UserController extends BaseController
     /**
      * Display a listing of the resource.
      *
+     * @param Request $request
      * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
@@ -99,7 +99,7 @@ class UserController extends BaseController
                 'user_id' => Auth::id(),
                 'user_search_id' => $id
             ]);
-            return $this->sendError('The resource does not exist',[],Response::HTTP_NOT_FOUND);
+            return $this->sendError('The resource does not exist',[]);
         }
     }
 
@@ -134,7 +134,7 @@ class UserController extends BaseController
             }
 
             $user->update($validatedData);
-            return $this->sendResponse(new UserResource($user),'User has been updated succesfully.');
+            return $this->sendResponse(new UserResource($user),'User has been updated successfully.');
         }
         catch(ValidationException $exception)
         {
@@ -151,7 +151,7 @@ class UserController extends BaseController
                 'user_id' => Auth::id(),
                 'user_search_id' => $id
             ]);
-            return $this->sendError('The resource does not exist',[],Response::HTTP_NOT_FOUND);
+            return $this->sendError('The resource does not exist',[]);
         }
     }
 
@@ -175,7 +175,7 @@ class UserController extends BaseController
                 'user_id' => Auth::id(),
                 'user_search_id' => $id
             ]);
-            return $this->sendError('The resource does not exist',[],Response::HTTP_NOT_FOUND);
+            return $this->sendError('The resource does not exist',[]);
         }
     }
 }
