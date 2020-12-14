@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Auth;
 
-use App\Http\Resources\UserResource;
+use App\Http\Business\AuthenticationBusiness;
+use App\Http\Controllers\Api\BaseController;
 use App\Models\User;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -15,6 +16,13 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends BaseController
 {
+    protected $authenticationBusiness;
+
+    public function __construct(AuthenticationBusiness $authenticationBusiness)
+    {
+        $this->authenticationBusiness = $authenticationBusiness;
+    }
+
     /**
      * Register api
      *
@@ -24,6 +32,7 @@ class AuthController extends BaseController
     public function register(Request $request): JsonResponse
     {
         try {
+
             $validatedData = $request->validate([
                 'name' => 'required|string',
                 'first_name' => 'required|string',
@@ -31,16 +40,18 @@ class AuthController extends BaseController
                 'password' => 'required|string|min:8',
                 'confirm_password' => 'required|string|min:8|same:password',
             ]);
+            $password = $validatedData['password'];
             $validatedData['password'] = bcrypt($validatedData['password']);
             $validatedData['is_admin'] = false;
-            $user = new UserResource(User::create($validatedData));
-
-            Log::channel(config('logging.channels.authentication.name'))->info('New user has been registered',[
+            $user = User::create($validatedData);
+            Log::channel(config('authentication'))->info('New user has been registered',[
                 'id'=>$user->id,
                 'name'=>$user->name,
                 'first_name'=>$user->first_name
             ]);
-            return $this->sendResponse($user, 'User register successfully. You have to login to access resources');
+            $response = $this->authenticationBusiness->grantPasswordToken($user->email,$request['password']);
+
+            return $this->sendResponse($response, 'User register successfully. You have to login to access resources');
         }
         catch(ValidationException $exception)
         {
@@ -75,11 +86,9 @@ class AuthController extends BaseController
             ]);
 
             if(!Auth::attempt($login)){
-                return $this->sendError('Unauthorised.', ['error'=>'Unauthorised'],Response::HTTP_FORBIDDEN);
+                return $this->sendError('Unauthorised.', ['error'=>'Unauthorised'],Response::HTTP_UNAUTHORIZED);
             }
-
-            $user = Auth::user();
-            $response['token'] =  $user->createToken(config('app.name'))->accessToken;
+            $response =  $this->authenticationBusiness->grantPasswordToken($request['email'], $request['password']);
 
             return $this->sendResponse($response, 'User login successfully.');
         }
@@ -93,6 +102,12 @@ class AuthController extends BaseController
         }
     }
 
+    public function refreshToken()
+    {
+        $response = $this->authenticationBusiness->refreshAccessToken();
+        return $this->sendResponse($response,'Token has been refreshed');
+    }
+
     /**
      * Logout Api
      * @return JsonResponse
@@ -100,9 +115,12 @@ class AuthController extends BaseController
     public function logout(): JsonResponse
     {
         try{
-            $user = Auth::user();
-            $user->token()->revoke();
-            return $this->sendResponse([], 'User logout successfully');
+            $token = request()->user()->token();
+            $token->delete();
+
+            // remove the httponly cookie
+            cookie()->queue(cookie()->forget('refresh_token'));
+            return $this->sendResponse([], 'You have been successfully logged out');
         } catch (Exception $exception)
         {
             Log::channel(config('logging.channels.authentication.name'))->error($exception->getMessage(),['user_id' => Auth::id()]);
