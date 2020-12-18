@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Business\AuthenticationBusiness;
+use App\Http\Business\ResponseJsonBusiness;
 use App\Http\Controllers\Api\BaseController;
 use App\Models\User;
 use Exception;
@@ -12,7 +13,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends BaseController
 {
@@ -28,10 +28,12 @@ class AuthController extends BaseController
      *
      * @param Request $request
      * @return JsonResponse
+     * @throws Exception
      */
-    public function register(Request $request)
+    public function register(Request $request): JsonResponse
     {
         try {
+
             $validatedData = $request->validate([
                 'name' => 'required|string',
                 'first_name' => 'required|string',
@@ -50,14 +52,14 @@ class AuthController extends BaseController
             ]);
             $response = $this->authenticationBusiness->grantPasswordToken($user->email,$request['password']);
 
-            return $this->sendResponse($response, 'User register successfully. You have to login to access resources');
+            return ResponseJsonBusiness::sendSuccess($response, 'User register successfully. You have to login to access resources');
         }
         catch(QueryException $exception)
         {
             Log::channel(config('logging.channels.authentication.name'))->info($exception->getMessage(),[
                 'request' => $request->all()
             ]);
-            return $this->sendError('User with this email address already exist',$request->all(),Response::HTTP_CONFLICT);
+            return ResponseJsonBusiness::sendError('User with this email address already exist',$request->all(),Response::HTTP_CONFLICT);
         }
     }
 
@@ -66,37 +68,32 @@ class AuthController extends BaseController
      *
      * @param Request $request
      * @return JsonResponse
+     * @throws Exception
      */
     public function login(Request $request): JsonResponse
     {
-        try{
-
-            $login = $request->validate([
+        $login = $request->validate([
                 'email' => 'required|string|email',
                 'password' => 'required|string'
             ]);
 
             if(!Auth::attempt($login)){
-                return $this->sendError('Unauthorised.', ['error'=>'Unauthorised'],Response::HTTP_UNAUTHORIZED);
+                return ResponseJsonBusiness::sendError('Unauthorised.', ['error'=>'Unauthorised'],Response::HTTP_UNAUTHORIZED);
             }
             $response = $this->authenticationBusiness->grantPasswordToken($request['email'], $request['password']);
 
-            return $this->sendResponse($response, 'User login successfully.');
-        }
-        catch(ValidationException $exception)
-        {
-            Log::channel(config('logging.channels.authentication.name'))->info($exception->getMessage(),[
-                'request' => $request->all(),
-                'errors' => $exception->errors()
-            ]);
-            return $this->sendError($exception->getMessage(),$exception->errors(),Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+            return ResponseJsonBusiness::sendSuccess($response, 'User login successfully.');
     }
 
-    public function refreshToken()
+    /**
+     * refresh token
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function refreshToken(): JsonResponse
     {
         $response = $this->authenticationBusiness->refreshAccessToken();
-        return $this->sendResponse($response,'Token has been refreshed');
+        return ResponseJsonBusiness::sendSuccess($response,'Token has been refreshed');
     }
 
     /**
@@ -111,12 +108,12 @@ class AuthController extends BaseController
 
             // remove the httponly cookie
             cookie()->queue(cookie()->forget('refresh_token'));
-            return $this->sendResponse([], 'You have been successfully logged out');
+
+            return ResponseJsonBusiness::sendSuccess([],'You have been successfully logged out',);
         } catch (Exception $exception)
         {
             Log::channel(config('logging.channels.authentication.name'))->error($exception->getMessage(),['user_id' => Auth::id()]);
-            return $this->sendError('Error with logout. Retry later');
+            return ResponseJsonBusiness::sendError('Error with logout. Retry later');
         }
-
     }
 }
