@@ -3,11 +3,11 @@
 
 namespace App\Http\Business;
 
+use App\Exceptions\AuthException;
 use Exception;
-use GuzzleHttp\Client;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\Http;
-use Laravel\Passport\Client as OClient;
+use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 
 class AuthenticationBusiness
@@ -48,7 +48,7 @@ class AuthenticationBusiness
      * make Post Request
      * @param array $params
      * @return mixed
-     * @throws Exception
+     * @throws AuthException
      */
     protected function makePostRequest(array $params)
     {
@@ -57,10 +57,15 @@ class AuthenticationBusiness
             'client_secret' => config('services.passport.password_client_secret'),
             'scope' => '*'
         ],$params);
-        $proxy = \Request::create('oauth/token','post',$params);
-        $response = json_decode(app()->handle($proxy)->getContent());
-        $this->setHttpOnlyCookie($response->refresh_token);
-        return $response;
+        try{
+            $proxy = \Request::create('oauth/token','post',$params);
+            $response = json_decode(app()->handle($proxy)->getContent());
+            $this->setHttpOnlyCookie($response->refresh_token);
+            return $response;
+        }catch(Exception $exception)
+        {
+            throw new AuthException('[MakePostRequest] -'.$exception->getMessage(),$exception->getCode());
+        }
     }
 
     /**
@@ -78,27 +83,5 @@ class AuthenticationBusiness
             false,
             true
         );
-    }
-    public function getTokenAndRefreshToken($email, $password) {
-        try {
-
-            $oClient = OClient::where('password_client', 1)->firstOrFail();
-            $response = Http::asForm()->post( 'http://localhost:8000/oauth/token', [
-                    'grant_type' => 'client_credentials',
-                    'client_id' => $oClient->id,
-                    'client_secret' => $oClient->secret,
-                    'username' => $email,
-                    'password' => $password,
-                    'scope' => '*',
-            ]);
-            return $response;
-        }
-        catch(ModelNotFoundException $exception)
-        {
-            return 'coucou';
-        }
-        catch(Exception $exception){
-            return 'merde';
-        }
     }
 }
