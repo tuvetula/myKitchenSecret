@@ -14,8 +14,18 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
+        // create my profil admin
+        user::factory()
+            ->createOne([
+                'email' => 'romain.marcant@gmail.com',
+                'name'=> 'marcant',
+                'first_name' => 'romain',
+                'is_admin' => 1
+            ]);
+
+        //create 49 another random profil
         User::factory()
-            ->times(50)
+            ->times(49)
             ->create();
     }
 }
