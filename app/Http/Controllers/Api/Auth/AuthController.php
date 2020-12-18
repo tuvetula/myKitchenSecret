@@ -29,10 +29,9 @@ class AuthController extends BaseController
      * @param Request $request
      * @return JsonResponse
      */
-    public function register(Request $request): JsonResponse
+    public function register(Request $request)
     {
         try {
-
             $validatedData = $request->validate([
                 'name' => 'required|string',
                 'first_name' => 'required|string',
@@ -52,14 +51,6 @@ class AuthController extends BaseController
             $response = $this->authenticationBusiness->grantPasswordToken($user->email,$request['password']);
 
             return $this->sendResponse($response, 'User register successfully. You have to login to access resources');
-        }
-        catch(ValidationException $exception)
-        {
-            Log::channel(config('logging.channels.authentication.name'))->info($exception->getMessage(),[
-                'request' => $request->all(),
-                'errors' => $exception->errors()
-            ]);
-            return $this->sendError($exception->getMessage(),$exception->errors(),Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         catch(QueryException $exception)
         {
@@ -88,7 +79,7 @@ class AuthController extends BaseController
             if(!Auth::attempt($login)){
                 return $this->sendError('Unauthorised.', ['error'=>'Unauthorised'],Response::HTTP_UNAUTHORIZED);
             }
-            $response =  $this->authenticationBusiness->grantPasswordToken($request['email'], $request['password']);
+            $response = $this->authenticationBusiness->grantPasswordToken($request['email'], $request['password']);
 
             return $this->sendResponse($response, 'User login successfully.');
         }
