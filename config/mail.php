@@ -2,6 +2,8 @@
 
 return [
 
+    'support' => env('MAIL_ADDRESS_SUPPORT'),
+
     /*
     |--------------------------------------------------------------------------
     | Default Mailer
