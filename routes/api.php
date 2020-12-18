@@ -17,9 +17,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->group(function(){
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login'])->name('login');
-    Route::post('refresh_token', [AuthController::class,'refreshToken']);
+    Route::post('register', [AuthController::class, 'register'])->name('api.register');
+    Route::post('login', [AuthController::class, 'login'])->name('api.login');
+    Route::post('refresh_token', [AuthController::class,'refreshToken'])->name('api.refresh_token');
 
     Route::middleware('auth:api')->group(function(){
         Route::prefix('recipes')->group(function(){
