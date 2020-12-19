@@ -133,7 +133,6 @@ class AuthTest extends TestCase
         $this->assertArrayHasKey('access_token', $responseLogin->json()['data']);
         $cookie = $responseLogin->json()['data']['refresh_token'];
         $this->disableCookieEncryption();
-        Log::info('test: ' . $responseLogin->json()['data']['access_token']);
         $responseLogout = $this->withCookie('refresh_token', $cookie)->withHeader('Authorization', 'Bearer ' . $responseLogin->json()['data']['access_token'])
             ->post(route('api.logout'));
         //Assert it was successful
