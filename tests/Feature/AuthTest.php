@@ -112,7 +112,7 @@ class AuthTest extends TestCase
 
     /**
      * @test
-     * Test login
+     * Test logout
      */
     public function testLogout()
     {
