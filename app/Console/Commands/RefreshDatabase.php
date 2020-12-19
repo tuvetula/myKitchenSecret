@@ -40,10 +40,12 @@ class RefreshDatabase extends Command
         $this->output->title($this->signature.' start');
         if(env('APP_ENV') != 'PROD' && $this->confirm('Are you sure you want to refresh database with migrations?'))
         {
+            //migrate: refresh
             $this->info('migrate:refresh start');
             $this->callSilent('migrate:refresh');
             $this->info('migrate:refresh finished');
 
+            // make db seed
             $this->info('db:seed start');
             $this->output->progressStart(count(DatabaseSeeder::SEEDER_TO_CALL));
             foreach (DatabaseSeeder::SEEDER_TO_CALL as $seed){
@@ -55,6 +57,7 @@ class RefreshDatabase extends Command
             $this->output->progressFinish();
             $this->info('db:seed finished');
 
+            // install laravel passport
             $this->info('passport:install start');
             $this->callSilently('passport:install');
             $personalAccessClientSecret = DB::table('oauth_clients')
@@ -66,8 +69,11 @@ class RefreshDatabase extends Command
                 ->where('id',2)
                 ->value('secret');
             $this->setEnv('GRAND_CLIENT_SECRET',$grandClientSecret);
+
             $this->info('passport:install finished');
+
             $this->output->success($this->signature.' finished');
+
             $this->call('serve');
         } else {
             $this->info('command '.$this->signature.' execution has been canceled');
