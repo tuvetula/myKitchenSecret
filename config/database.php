@@ -5,6 +5,12 @@ use Illuminate\Support\Str;
 return [
 
     /*
+     * Passport variables
+     */
+    'personnalAccessClientSecret' => env('PERSONNAL_ACCESS_CLIENT_SECRET'),
+    'grandClientSecret' => env('GRAND_CLIENT_SECRET'),
+
+    /*
     |--------------------------------------------------------------------------
     | Default Database Connection Name
     |--------------------------------------------------------------------------
