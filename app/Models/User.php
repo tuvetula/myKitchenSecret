@@ -7,14 +7,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 use Laravel\Passport\HasApiTokens;
 
 class User extends Authenticatable
 {
     use HasFactory, HasApiTokens, Notifiable, SoftDeletes;
 
-    const LOG_CHANNEL = 'user';
-
+    /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::created(function ($user) {
+            Log::channel(config('logging.channels.user.name'))->info('New user has been created',[
+                'id'=>$user->id,
+                'email' => $user->email
+            ]);
+        });
+    }
     /**
      * The attributes that are mass assignable.
      *
@@ -48,5 +61,37 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_admin' => 'boolean'
     ];
+
+
+    /**
+     * Mutator - Hash password before saving user model.
+     * @param $password
+     */
+    public function setPasswordAttribute($password)
+    {
+        if($password)
+        {
+            $this->attributes['password'] = bcrypt($password);
+        }
+    }
+
+    /**
+     * Mutator - strToLower and ucfirst name
+     * @param $name
+     */
+    public function setNameAttribute($name)
+    {
+        $this->attributes['name'] = ucfirst(strtolower($name));
+    }
+
+    /**
+     * Mutator - strToLower and ucfirst name
+     * @param $first_name
+     */
+    public function setFirstNameAttribute($first_name)
+    {
+        $this->attributes['first_name'] = ucfirst(strtolower($first_name));
+    }
 }

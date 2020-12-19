@@ -24,12 +24,12 @@ class AuthTest extends TestCase
             'name' => 'testName',
             'first_name' => 'firstNameTest',
             'password' => 'secret1234',
-            'confirm_password' => 'secret1234',
+            'password_confirmation' => 'secret1234',
         ];
         //Send post request
         $response = $this->json('POST', route('api.register'), $data);
         //Delete data
-        User::where('email', 'test@gmail.com')->forceDelete();
+        User::where('email', $data['email'])->forceDelete();
         //Assert it was successful
         $response->assertStatus(200);
         //Assert we received data
@@ -47,24 +47,22 @@ class AuthTest extends TestCase
     public function testLogin()
     {
         //Create user
-        $user = User::factory()->createOne([
-            'password' => bcrypt('secret1234')
-        ]);
+        $user = User::factory()->create();
         //attempt login
-        $response = $this->json('POST', route('api.login'), [
+        $responseLogin = $this->json('POST', route('api.login'), [
             'email' => $user['email'],
-            'password' => 'secret1234',
+            'password' => 'secretFaker',
         ]);
         //Assert it was successful
-        $response->assertStatus(200);
+        $responseLogin->assertStatus(200);
         //Assert we received data
-        $this->assertArrayHasKey('data', $response->json());
+        $this->assertArrayHasKey('data', $responseLogin->json());
         //Assert we have access_token
-        $this->assertArrayHasKey('access_token', $response->json()['data']);
+        $this->assertArrayHasKey('access_token', $responseLogin->json()['data']);
         //Assert we have refresh_token
-        $this->assertArrayHasKey('refresh_token', $response->json()['data']);
+        $this->assertArrayHasKey('refresh_token', $responseLogin->json()['data']);
         //Assert response have a the refresh_token cookie
-        $response->assertCookie('refresh_token');
+        $responseLogin->assertCookie('refresh_token');
         //Delete the user
         User::where('email', $user['email'])->forceDelete();
     }
@@ -78,36 +76,36 @@ class AuthTest extends TestCase
         //Create user
         $user = User::factory()->create();
         //attempt login
-        $response = $this->json('POST', route('api.login'), [
+        $responseLogin = $this->json('POST', route('api.login'), [
             'email' => $user['email'],
-            'password' => 'aaaaaaaa',
+            'password' => 'secretFaker',
         ]);
-        //Delete the user
-        User::where('email', $user['email'])->forceDelete();
         //Assert it was successful and a token was received
-        $response->assertStatus(200);
+        $responseLogin->assertStatus(200);
         //Assert we received data
-        $this->assertArrayHasKey('data', $response->json());
+        $this->assertArrayHasKey('data', $responseLogin->json());
         //Assert we have access_token
-        $this->assertArrayHasKey('access_token', $response->json()['data']);
+        $this->assertArrayHasKey('access_token', $responseLogin->json()['data']);
         //Assert we have refresh_token
-        $this->assertArrayHasKey('refresh_token', $response->json()['data']);
+        $this->assertArrayHasKey('refresh_token', $responseLogin->json()['data']);
         //Assert response have a the refresh_token cookie
-        $response->assertCookie('refresh_token');
-        $cookie = $response->json()['data']['refresh_token'];
+        $responseLogin->assertCookie('refresh_token');
+        $cookie = $responseLogin->json()['data']['refresh_token'];
 
         // Attempt refresh token
         $this->disableCookieEncryption();
-        $response1 = $this->withCookie('refresh_token', $cookie)
+        $responseRefreshToken = $this->withCookie('refresh_token', $cookie)
             ->post(route('api.refresh_token'));
         //Assert it was successful and a token was received
-        $response1->assertStatus(200);
+        $responseRefreshToken->assertStatus(200);
         //Assert we received data
-        $this->assertArrayHasKey('data', $response1->json());
+        $this->assertArrayHasKey('data', $responseRefreshToken->json());
         //Assert we have access_token
-        $this->assertArrayHasKey('access_token', $response1->json()['data']);
+        $this->assertArrayHasKey('access_token', $responseRefreshToken->json()['data']);
         //Assert we have refresh_token
-        $this->assertArrayHasKey('refresh_token', $response1->json()['data']);
+        $this->assertArrayHasKey('refresh_token', $responseRefreshToken->json()['data']);
+        //Delete the user
+        User::where('email', $user['email'])->forceDelete();
     }
 
     /**
@@ -117,13 +115,11 @@ class AuthTest extends TestCase
     public function testLogout()
     {
         //Create user
-        $user = User::factory()->createOne([
-            'password' => bcrypt('secret1234')
-        ]);
+        $user = User::factory()->create();
         //attempt login
         $responseLogin = $this->json('POST', route('api.login'), [
             'email' => $user['email'],
-            'password' => 'secret1234',
+            'password' => 'secretFaker',
         ]);
         //Assert it was successful
         $responseLogin->assertStatus(200);
