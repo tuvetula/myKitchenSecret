@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Exceptions\AuthException;
 use App\Http\Business\AuthenticationBusiness;
 use App\Http\Business\ResponseJsonBusiness;
 use App\Http\Controllers\Api\BaseController;
@@ -58,7 +59,7 @@ class AuthController extends BaseController
     public function login(LoginRequest $request): JsonResponse
     {
             if(!Auth::attempt($request->validated())){
-                return ResponseJsonBusiness::sendError('Unauthorised.', ['error'=>'Unauthorised'],Response::HTTP_UNAUTHORIZED);
+                throw new AuthException('login failed! Check email or password.',Response::HTTP_FORBIDDEN);
             }
             $response = $this->authenticationBusiness->grantPasswordToken($request['email'], $request['password']);
             return ResponseJsonBusiness::sendSuccess($response, 'User login successfully.');

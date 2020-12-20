@@ -3,10 +3,10 @@
 
 namespace App\Logging;
 
+
 use Illuminate\Log\Logger;
 use Illuminate\Support\Facades\Auth;
 use Monolog\Formatter\LineFormatter;
-use Monolog\Formatter\NormalizerFormatter;
 
 class CustomizeFormatter
 {
@@ -19,14 +19,14 @@ class CustomizeFormatter
     public function __invoke(Logger $logger)
     {
         foreach ($logger->getHandlers() as $handler) {
-                $handler->setFormatter(new LineFormatter(
-                    '[%datetime%] %channel%.%level_name%: %message% %context% %extra%'.PHP_EOL,
-                    'Y-m-d H:i:s',
-                    true,
-                    true
-                ));
-                $handler->pushProcessor([$this, 'processLogRecord']);
-                $logger->pushHandler($handler);
+            $handler->setFormatter(new LineFormatter(
+                '[%datetime%] %channel%.%level_name%: %message% %context% %extra%'.PHP_EOL,
+                'Y-m-d H:i:s',
+                false,
+                true
+            ));
+            $handler->pushProcessor([$this, 'processLogRecord']);
+            //$logger->pushHandler($handler);
         }
     }
 
