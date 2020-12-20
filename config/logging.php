@@ -1,8 +1,6 @@
 <?php
 
-use App\Logging\CustomizeFormatter;
 use Monolog\Handler\NullHandler;
-use Monolog\Handler\RotatingFileHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
 
@@ -45,21 +43,18 @@ return [
         'authentication' => [
             'name' => 'authentication',
             'driver' => 'daily',
-            'tap' => [CustomizeFormatter::class],
+            'path' => storage_path('logs/Authentication/auth.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'path' => storage_path('logs/Authentication/authentication.log')
         ],
         'user' => [
             'name' => 'user',
             'driver' => 'daily',
-            'tap' => [CustomizeFormatter::class],
             'path' => storage_path('logs/User/user.log'),
             'level' => env('LOG_LEVEL', 'debug'),
         ],
         'recipe' => [
             'name' => 'recipe',
             'driver' => 'daily',
-            'tap' => [CustomizeFormatter::class],
             'path' => storage_path('logs/Recipe/recipe.log'),
             'level' => env('LOG_LEVEL', 'debug'),
         ],
@@ -121,4 +116,9 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
         ],
     ],
+
+    'list_channels_name' => [
+        'auth' => 'authentication'
+    ]
+
 ];
