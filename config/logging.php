@@ -43,18 +43,21 @@ return [
         'authentication' => [
             'name' => 'authentication',
             'driver' => 'daily',
-            'path' => storage_path('logs/Authentication/auth.log'),
+            'tap' => [App\Logging\CustomizeFormatter::class],
+            'path' => storage_path('logs/Authentication/authentication.log'),
             'level' => env('LOG_LEVEL', 'debug'),
         ],
         'user' => [
             'name' => 'user',
             'driver' => 'daily',
+            'tap' => [App\Logging\CustomizeFormatter::class],
             'path' => storage_path('logs/User/user.log'),
             'level' => env('LOG_LEVEL', 'debug'),
         ],
         'recipe' => [
             'name' => 'recipe',
             'driver' => 'daily',
+            'tap' => [App\Logging\CustomizeFormatter::class],
             'path' => storage_path('logs/Recipe/recipe.log'),
             'level' => env('LOG_LEVEL', 'debug'),
         ],
