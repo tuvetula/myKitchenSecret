@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use App\Http\Business\ResponseJsonBusiness;
+use ErrorException;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
@@ -10,6 +11,9 @@ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\ErrorHandler\Error\FatalError;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -41,10 +45,6 @@ class Handler extends ExceptionHandler
     public function register()
     {
         $this->renderable(function (ValidationException $exception,$request){
-            Log::channel(config('logging.channels.authentication.name'))->warning($exception->getMessage(),[
-                'request' => $request->all(),
-                'errors' => $exception->errors()
-            ]);
             return ResponseJsonBusiness::sendError($exception->getMessage(),$exception->errors(),Response::HTTP_UNPROCESSABLE_ENTITY);
         });
 
@@ -52,8 +52,12 @@ class Handler extends ExceptionHandler
             return ResponseJsonBusiness::sendError('This resource doesn\'t exist' ,$request->all(),Response::HTTP_INTERNAL_SERVER_ERROR);
         });
 
-        $this->renderable(function (Exception $e) {
-           return ResponseJsonBusiness::sendError('Internal server error',Response::HTTP_INTERNAL_SERVER_ERROR);
+        $this->renderable(function (NotFoundHttpException $exception){
+            return ResponseJsonBusiness::sendError('Route not found',[],Response::HTTP_NOT_FOUND);
+        });
+
+        $this->renderable(function (Exception $exception) {
+            return ResponseJsonBusiness::sendError('Internal server error',[],Response::HTTP_INTERNAL_SERVER_ERROR);
         });
     }
 

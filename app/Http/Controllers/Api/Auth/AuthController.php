@@ -8,13 +8,16 @@ use App\Http\Business\ResponseJsonBusiness;
 use App\Http\Controllers\Api\BaseController;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Notifications\RegisterUserNotification;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class AuthController extends BaseController
 {
@@ -36,16 +39,14 @@ class AuthController extends BaseController
     {
         try {
             $user = User::create($request->validated());
-            $response = $this->authenticationBusiness->grantPasswordToken($user->email,$request['password']);
-
-            return ResponseJsonBusiness::sendSuccess($response, 'User register successfully. You have to login to access resources');
+            Notification::send($user,new RegisterUserNotification());
+            return ResponseJsonBusiness::sendSuccess(new UserResource($user), 'User register successfully. You have to login to access resources');
         }
         catch(QueryException $exception)
         {
-            Log::channel(config('logging.channels.authentication.name'))->info($exception->getMessage(),[
-                'request' => $request->all()
-            ]);
-            return ResponseJsonBusiness::sendError('User with this email address already exist',[],Response::HTTP_CONFLICT);
+            throw new AuthException('Registration failed! User with this email address already exist.',
+                Response::HTTP_CONFLICT
+            );
         }
     }
 
@@ -58,11 +59,11 @@ class AuthController extends BaseController
      */
     public function login(LoginRequest $request): JsonResponse
     {
-            if(!Auth::attempt($request->validated())){
-                throw new AuthException('login failed! Check email or password.',Response::HTTP_FORBIDDEN);
-            }
-            $response = $this->authenticationBusiness->grantPasswordToken($request['email'], $request['password']);
-            return ResponseJsonBusiness::sendSuccess($response, 'User login successfully.');
+        if(!Auth::attempt($request->validated())){
+            throw new AuthException('login failed! Check email or password.',Response::HTTP_FORBIDDEN);
+        }
+        $response = $this->authenticationBusiness->grantPasswordToken($request['email'], $request['password']);
+        return ResponseJsonBusiness::sendSuccess($response, 'User login successfully.');
     }
 
     /**
@@ -90,10 +91,11 @@ class AuthController extends BaseController
             cookie()->queue(cookie()->forget('refresh_token'));
 
             return ResponseJsonBusiness::sendSuccess([],'You have been successfully logged out',);
-        } catch (Exception $exception)
+        }
+        catch (Exception $exception)
         {
             Log::channel(config('logging.channels.authentication.name'))->error($exception->getMessage(),['user_id' => Auth::id()]);
-            return ResponseJsonBusiness::sendError('Error with logout. Retry later');
+            return ResponseJsonBusiness::sendError( 'Error with logout. Retry later');
         }
     }
 }

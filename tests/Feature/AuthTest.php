@@ -28,16 +28,12 @@ class AuthTest extends TestCase
         ];
         //Send post request
         $response = $this->json('POST', route('api.register'), $data);
-        //Delete data
-        User::where('email', $data['email'])->forceDelete();
         //Assert it was successful
         $response->assertStatus(200);
         //Assert we received data
         $this->assertArrayHasKey('data', $response->json());
-        //Assert we have access_token
-        $this->assertArrayHasKey('access_token', $response->json()['data']);
-        //Assert we have refresh_token
-        $this->assertArrayHasKey('refresh_token', $response->json()['data']);
+        //Delete data
+        User::where('email', $data['email'])->forceDelete();
     }
 
     /**

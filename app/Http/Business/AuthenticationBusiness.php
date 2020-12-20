@@ -8,6 +8,7 @@ use Exception;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Request;
 
 
 class AuthenticationBusiness
@@ -48,7 +49,7 @@ class AuthenticationBusiness
      * make Post Request
      * @param array $params
      * @return mixed
-     * @throws AuthException
+     * @throws Exception
      */
     protected function makePostRequest(array $params)
     {
@@ -57,15 +58,11 @@ class AuthenticationBusiness
             'client_secret' => config('services.passport.password_client_secret'),
             'scope' => '*'
         ],$params);
-        try{
-            $proxy = \Request::create('oauth/token','post',$params);
-            $response = json_decode(app()->handle($proxy)->getContent());
-            $this->setHttpOnlyCookie($response->refresh_token);
-            return $response;
-        }catch(Exception $exception)
-        {
-            throw new AuthException('[MakePostRequest] -'.$exception->getMessage(),$exception->getCode());
-        }
+
+        $proxy = Request::create('oauth/token','post',$params);
+        $response = json_decode(app()->handle($proxy)->getContent());
+        $this->setHttpOnlyCookie($response->refresh_token);
+        return $response;
     }
 
     /**

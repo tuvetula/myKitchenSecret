@@ -11,6 +11,12 @@ use Throwable;
 
 class AuthException extends Exception
 {
+    /**
+     * AuthException constructor.
+     * @param string $message
+     * @param int $code
+     * @param Throwable|null $previous
+     */
     public function __construct($message = "", $code = 0, Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
@@ -21,12 +27,15 @@ class AuthException extends Exception
      */
     public function report(): bool
     {
-        if($this->getCode() === Response::HTTP_FORBIDDEN)
-        {
-            Log::channel('authentication')->notice($this->getMessage(),request()->except('password'));
-
-        } else {
-            Log::channel('authentication')->info('['.get_class($this).'] - '.$this->getMessage());
+        switch ($this->getCode()){
+            case Response::HTTP_CONFLICT:
+            case Response::HTTP_FORBIDDEN:
+                Log::channel(config('logging.channels.authentication.name'))
+                    ->notice($this->getMessage(),request()->only('email'));
+                break;
+            case 'default':
+                Log::channel(config('logging.channels.authentication.name'))
+                    ->warning($this->getMessage().PHP_EOL.$this->getTraceAsString());
         }
         return false;
     }
