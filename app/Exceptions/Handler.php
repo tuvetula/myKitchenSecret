@@ -9,12 +9,10 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\ErrorHandler\Error\FatalError;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Exception\RouteNotFoundException;
-use Throwable;
+
 
 class Handler extends ExceptionHandler
 {
@@ -48,12 +46,8 @@ class Handler extends ExceptionHandler
             return ResponseJsonBusiness::sendError($exception->getMessage(),$exception->errors(),Response::HTTP_UNPROCESSABLE_ENTITY);
         });
 
-        $this->renderable(function (ModelNotFoundException $exception,$request) {
-            return ResponseJsonBusiness::sendError('This resource doesn\'t exist' ,$request->all(),Response::HTTP_INTERNAL_SERVER_ERROR);
-        });
-
         $this->renderable(function (NotFoundHttpException $exception){
-            return ResponseJsonBusiness::sendError('Route not found',[],Response::HTTP_NOT_FOUND);
+            return ResponseJsonBusiness::sendError($exception->getMessage(),[],Response::HTTP_NOT_FOUND);
         });
 
         $this->renderable(function (Exception $exception) {

@@ -38,7 +38,8 @@ class User extends Authenticatable
         'first_name',
         'email',
         'password',
-        'is_admin'
+        'is_admin',
+        'remember_token'
     ];
 
     /**
@@ -93,5 +94,55 @@ class User extends Authenticatable
     public function setFirstNameAttribute($first_name)
     {
         $this->attributes['first_name'] = ucfirst(strtolower($first_name));
+    }
+
+    //SETTER
+    /**
+     * Set the token value for the "remember me" session.
+     * @param string $value
+     * @return void
+     */
+    public function setRememberToken($value)
+    {
+        $this->remember_token = $value;
+    }
+
+    /**
+     * Set the email_verified_at
+     * @param $value
+     * @return void
+     */
+    public function setEmailVerifiedAt($value)
+    {
+        $this->email_verified_at = $value;
+    }
+
+    /**
+     * Set password
+     * @param $value
+     * @return void
+     */
+    public function setPassword($value)
+    {
+        $this->password = $value;
+    }
+
+    // GETTERS
+    /**
+     * Get remember_token
+     * @return string|null
+     */
+    public function getRememberToken(): ?string
+    {
+        return $this->remember_token;
+    }
+
+    /**
+     * Get email_verified_at
+     * @return mixed
+     */
+    public function getEmailVerifiedAt()
+    {
+        return $this->email_verified_at;
     }
 }

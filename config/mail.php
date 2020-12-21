@@ -1,8 +1,10 @@
 <?php
 
 return [
+    'contact_address' => env('MAIL_ADDRESS_CONTACT'),
+    'support_address' => env('MAIL_ADDRESS_SUPPORT'),
+    'no_response_address' => env('MAIL_ADDRESS_NO_RESPONSE'),
 
-    'support' => env('MAIL_ADDRESS_SUPPORT'),
 
     /*
     |--------------------------------------------------------------------------
@@ -86,7 +88,7 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+        'address' => env('MAIL_ADDRESS_NO_RESPONSE', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 

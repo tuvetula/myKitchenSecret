@@ -8,10 +8,17 @@ use App\Http\Business\ResponseJsonBusiness;
 use App\Http\Controllers\Api\BaseController;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\VerifyEmailRequest;
+use App\Http\Requests\Auth\ForgetPasswordRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Notifications\RegisterUserNotification;
+use App\Notifications\Auth\ForgetPasswordNotification;
+use App\Notifications\Auth\RegisterUserNotification;
+use Carbon\Carbon;
 use Exception;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
@@ -47,6 +54,90 @@ class AuthController extends BaseController
             throw new AuthException('Registration failed! User with this email address already exist.',
                 Response::HTTP_CONFLICT
             );
+        }
+    }
+
+    /**
+     * Confirm email address
+     * @param VerifyEmailRequest $request
+     * @param $id
+     * @return JsonResponse
+     * @throws AuthException
+     */
+    public function verifyEmail(VerifyEmailRequest $request,$id): JsonResponse
+    {
+        try{
+            $validatedData = $request->validated();
+            $user = User::findOrFail($id);
+            if($user->remember_token == $validatedData['token'])
+            {
+                $user->setEmailVerifiedAt(Carbon::now());
+                $user->setRememberToken(null);
+                $user->save();
+                // TODO redirect to front-end
+                return ResponseJsonBusiness::sendSuccess(new UserResource($user),'Email verified with success');
+            } else {
+                throw new AuthException('Token verify email is invalid!',Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+        }catch(ModelNotFoundException $exception)
+        {
+            return ResponseJsonBusiness::sendError('There is no account with this email address' ,$request->only('email'),Response::HTTP_NOT_FOUND);
+        }
+    }
+
+    /**
+     * Send mail to user for reset password
+     * @param ForgetPasswordRequest $request
+     * @return JsonResponse
+     */
+    public function forgetPassword(ForgetPasswordRequest $request): JsonResponse
+    {
+        try{
+            $validatedData = $request->validated();
+            $user = User::where('email', $validatedData['email'])->firstOrFail();
+            $user->setRememberToken(uniqid());
+            $user->save();
+            Notification::locale('fr')->send($user,new ForgetPasswordNotification());
+            return ResponseJsonBusiness::sendSuccess([],trans_choice('auth.checkMailBoxForgetPassword',0,[],'fr'));
+        }catch(ModelNotFoundException $exception)
+        {
+            return ResponseJsonBusiness::sendError('No account with this email address' ,$request->only('email'),Response::HTTP_NOT_FOUND);
+        }
+    }
+
+    /**
+     * Reset user password
+     * @param ResetPasswordRequest $request
+     * @param $id
+     * @return JsonResponse
+     * @throws AuthException
+     */
+    public function resetPassword(ResetPasswordRequest $request,$id): JsonResponse
+    {
+        try{
+
+            $validatedData = $request->validated();
+            $user = User::findOrFail($id);
+            if($user->getRememberToken() && $validatedData['token'] == $user->getRememberToken())
+            {
+                $user->setPassword($request->input('password'));
+                if(!$user->getEmailVerifiedAt())
+                {
+                    $user->setEmailVerifiedAt(Carbon::now());
+                }
+                $user->setRememberToken(null);
+                $user->save();
+                return ResponseJsonBusiness::sendSuccess([],'Your password has been successfully reset.');
+            } else {
+                throw new AuthException('Token modify password is invalid!',Response::HTTP_UNAUTHORIZED,[
+                    'request_user_id' => $id,
+                    'request_token' => $request->input('token'),
+                    'user_token' => $user->getRememberToken()
+                ]);
+            }
+        }catch(ModelNotFoundException $exception)
+        {
+            return ResponseJsonBusiness::sendError('There is no account with this email address' ,$request->only('email'),Response::HTTP_NOT_FOUND);
         }
     }
 
