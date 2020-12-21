@@ -18,7 +18,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     Route::post('register', [AuthController::class, 'register'])->name('api.register');
-    Route::post('login', [AuthController::class, 'login'])->name('api.login');
+    Route::post('verify_email/{id}', [AuthController::class, 'verifyEmail'])->name('api.verifyEmail');
+    Route::post('forget_password', [AuthController::class, 'forgetPassword'])->name('api.forgetPassword');
+    Route::patch('reset_password/{id}',[AuthController::class, 'resetPassword'])->name('api.resetPassword');
+    Route::post('login', [AuthController::class, 'login'])->name('api.login')->middleware('throttle:login');
     Route::post('refresh_token', [AuthController::class, 'refreshToken'])->name('api.refresh_token');
 
     Route::middleware('auth:api')->group(function () {

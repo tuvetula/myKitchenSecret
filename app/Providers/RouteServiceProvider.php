@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Exceptions\AuthException;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 
@@ -58,6 +60,12 @@ class RouteServiceProvider extends ServiceProvider
     {
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
+        });
+
+        RateLimiter::for('login', function (Request $request) {
+           return Limit::perMinute(5)->by($request->input('email'))->response(function(){
+               throw new AuthException('You tried 5 times to connect. Wait a minute to try again',Response::HTTP_TOO_MANY_REQUESTS);
+           });
         });
     }
 }

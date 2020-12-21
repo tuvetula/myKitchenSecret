@@ -30,7 +30,8 @@ class RegisterRequest extends FormRequest
             'email' => 'required|email',
             'password' => 'required|string|min:8',
             'password_confirmation' => 'required_with:password|string|min:8|same:password',
-            'is_admin' => 'boolean'
+            'is_admin' => 'boolean',
+            'remember_token' => 'string'
         ];
     }
 
@@ -42,5 +43,6 @@ class RegisterRequest extends FormRequest
     protected function prepareForValidation()
     {
         $this['is_admin'] = false;
+        $this['remember_token'] = uniqid();
     }
 }
